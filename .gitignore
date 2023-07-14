@@ -1,0 +1,8 @@
+﻿Binaries
+Objects
+.vs
+*.vcxproj
+*.filters
+*.user
+*.sln
+VoiceChatCPlusPlusTest/
