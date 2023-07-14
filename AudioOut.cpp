@@ -371,19 +371,20 @@ void EncoderAndDecoderInitialization()
     }
 }
 
-void EncodeAndDecode(nn::os::SystemEvent *systemEvent, nn::audio::AudioOut *audioOutOut, nn::audio::AudioOutBuffer* audioOutBuffer)
+void EncodeAndDecode(void* audioOutBuffer)
 {
     using namespace encodingAndDecoiding;
-    bool successOnce = false;
-    while (successOnce)
+    bool neverSucceded = true;
+    while (neverSucceded)
     {
         if (SwitchVoiceChatNativeCode::wntgd_GetVoiceBuffer(handler, bufferOut, count))
         {
             NN_LOG("Habemus ENCODED AUDIO! %i\n", *count);
-            if (SwitchVoiceChatDecodeNativeCode::wntgd_DecompressVoiceData(handler, bufferOut[0], *count, audioOut, outSampleCount, sampleRateOut)); 
+            if (SwitchVoiceChatDecodeNativeCode::wntgd_DecompressVoiceData(handler, bufferOut[0], *count, audioOutBuffer, outSampleCount, sampleRateOut)); 
             {
-                successOnce = true;
-                NN_LOG("Habemus DECODED AUDIO!\n");
+                neverSucceded = false;
+                NN_LOG("Habemus DECODED AUDIO!\nSample count out:%i", *outSampleCount);
+                NN_LOG("Sample rate out%i\n", *sampleRateOut);
             }
         }
     }
@@ -482,7 +483,7 @@ extern "C" void nnMain()
     {
         outBuffer[i] = allocator.Allocate(bufferSize, nn::audio::AudioOutBuffer::AddressAlignment);
         NN_ASSERT(outBuffer[i]);
-        EncodeAndDecode(&systemEvent, &audioOut, audioOutBuffer);
+        EncodeAndDecode(outBuffer[i]);
         //GenerateSquareWave(sampleFormat, outBuffer[i], channelCount, sampleRate, frameSampleCount, amplitude);
         nn::audio::SetAudioOutBufferInfo(&audioOutBuffer[i], outBuffer[i], bufferSize, dataSize);
         nn::audio::AppendAudioOutBuffer(&audioOut, &audioOutBuffer[i]);
@@ -587,7 +588,8 @@ extern "C" void nnMain()
             // Create square waveform data and register it again.
             void* pOutBuffer = nn::audio::GetAudioOutBufferDataPointer(pAudioOutBuffer);
             NN_ASSERT(nn::audio::GetAudioOutBufferDataSize(pAudioOutBuffer) == frameSampleCount * channelCount * nn::audio::GetSampleByteSize(sampleFormat));
-            GenerateSquareWave(sampleFormat, pOutBuffer, channelCount, sampleRate, frameSampleCount, amplitude);
+            EncodeAndDecode(pOutBuffer);
+            //GenerateSquareWave(sampleFormat, pOutBuffer, channelCount, sampleRate, frameSampleCount, amplitude);
             nn::audio::AppendAudioOutBuffer(&audioOut, pAudioOutBuffer);
 
             pAudioOutBuffer = nn::audio::GetReleasedAudioOutBuffer(&audioOut);
