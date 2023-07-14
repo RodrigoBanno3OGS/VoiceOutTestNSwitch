@@ -123,6 +123,10 @@
 #endif // USE_NPAD
 #include <nn/settings/settings_DebugPad.h>
 
+//Custom Includes
+#include "SwitchVoiceChatDecodeNativeCode.h"
+#include "SwitchVoiceChatNativeCode.h"
+
 namespace
 {
 
@@ -337,6 +341,55 @@ void Deallocate(void* p, size_t size)
 
 }  // Anonymous namespace.
 
+//Custom Code Region
+
+namespace encodingAndDecoiding 
+{
+    intptr_t* handler = new intptr_t(0);
+    unsigned char* lptm = new unsigned char(0);
+    unsigned char** bufferOut = &lptm;
+    int bufferOutSize = 0;
+    int* count = new int(0);
+    float* ptqtp = new float(0);
+    float** audioOut = &ptqtp;
+    int* outSampleCount = new int(0);
+    unsigned int* sampleRateOut = new unsigned int(0);
+}
+
+void EncoderAndDecoderInitialization() 
+{
+    NN_LOG("Let's try...\n");
+    if (!SwitchVoiceChatNativeCode::wntgd_StartRecordVoice())
+    {
+        NNS_LOG("FAILED TO INITIALIZE MICROPHONE\n");
+        return;
+    }
+    if (!SwitchVoiceChatDecodeNativeCode::wntgd_InitializeDecoder())
+    {
+        NNS_LOG("Decoder Initialization FAILED!\n");
+        return;
+    }
+}
+
+void EncodeAndDecode(nn::os::SystemEvent *systemEvent, nn::audio::AudioOut *audioOutOut, nn::audio::AudioOutBuffer* audioOutBuffer)
+{
+    using namespace encodingAndDecoiding;
+    bool successOnce = false;
+    while (successOnce)
+    {
+        if (SwitchVoiceChatNativeCode::wntgd_GetVoiceBuffer(handler, bufferOut, count))
+        {
+            NN_LOG("Habemus ENCODED AUDIO! %i\n", *count);
+            if (SwitchVoiceChatDecodeNativeCode::wntgd_DecompressVoiceData(handler, bufferOut[0], *count, audioOut, outSampleCount, sampleRateOut)); 
+            {
+                successOnce = true;
+                NN_LOG("Habemus DECODED AUDIO!\n");
+            }
+        }
+    }
+}
+
+//Custom Code Region End
 //
 // The main function.
 //
@@ -360,6 +413,9 @@ extern "C" void nnMain()
     }
 
     nn::TimeSpan endTime = nn::os::GetSystemTick().ToTimeSpan() + nn::TimeSpan::FromSeconds(timeout);
+
+    EncoderAndDecoderInitialization();
+
     // Get a list of available audio outputs.
     {
         NNS_LOG("Available AudioOuts:\n");
@@ -387,7 +443,7 @@ extern "C" void nnMain()
     nn::audio::AudioOutParameter parameter;
     nn::audio::InitializeAudioOutParameter(&parameter);
     parameter.sampleRate = 48000;
-    parameter.channelCount = 2;
+    parameter.channelCount = 1;
     // parameter.channelCount = 6;  // For 5.1ch output, specify 6 for the number of channels.
     if (nn::audio::OpenDefaultAudioOut(&audioOut, &systemEvent, parameter).IsFailure())
     {
@@ -426,7 +482,8 @@ extern "C" void nnMain()
     {
         outBuffer[i] = allocator.Allocate(bufferSize, nn::audio::AudioOutBuffer::AddressAlignment);
         NN_ASSERT(outBuffer[i]);
-        GenerateSquareWave(sampleFormat, outBuffer[i], channelCount, sampleRate, frameSampleCount, amplitude);
+        EncodeAndDecode(&systemEvent, &audioOut, audioOutBuffer);
+        //GenerateSquareWave(sampleFormat, outBuffer[i], channelCount, sampleRate, frameSampleCount, amplitude);
         nn::audio::SetAudioOutBufferInfo(&audioOutBuffer[i], outBuffer[i], bufferSize, dataSize);
         nn::audio::AppendAudioOutBuffer(&audioOut, &audioOutBuffer[i]);
     }

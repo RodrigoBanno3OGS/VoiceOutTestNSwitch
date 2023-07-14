@@ -60,8 +60,9 @@ namespace SwitchVoiceChatDecodeNativeCode {
 		delete totalBufferDecoder;
 	}
 
-	extern "C" bool wntgd_DecompressVoiceData(intptr_t * handle, unsigned char* inputBuffer, int count, float** audioOut, int* outSampleCount, unsigned int* sampleRateOut)
+	extern "C" bool wntgd_DecompressVoiceData(intptr_t * handle, unsigned char* inputBuffer, int count, void* audioOutBuffer, int* outSampleCount, unsigned int* sampleRateOut)
 	{
+		auto audioOutBufferReinterpreted = reinterpret_cast<int16_t*>(audioOutBuffer);
 		size_t partialConsumed = 0;
 		int partialOutSampleCount = 0;
 		size_t totalConsumed = 0;
@@ -83,7 +84,7 @@ namespace SwitchVoiceChatDecodeNativeCode {
 				outVector->resize(totalOutSampleCount);
 				for (int i = 0; i < partialOutSampleCount; i++)
 				{
-					outVector->at(totalOutSampleCount - partialOutSampleCount + i) = static_cast<float>(decoderOutBuffer[i]) / 32767;
+					audioOutBufferReinterpreted[totalOutSampleCount - partialOutSampleCount + i] = decoderOutBuffer[i];
 				}
 			}
 			else
@@ -94,7 +95,7 @@ namespace SwitchVoiceChatDecodeNativeCode {
 		}
 
 		*handle = reinterpret_cast<intptr_t>(outVector);
-		*audioOut = outVector->data();
+		//*audioOutBuffer = outVector->data();
 		*outSampleCount = totalOutSampleCount;
 		*sampleRateOut = SAMPLE_RATE;
 		return result;
