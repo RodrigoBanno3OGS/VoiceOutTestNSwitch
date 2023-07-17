@@ -477,7 +477,7 @@ extern "C" void nnMain()
     NN_ASSERT(sampleFormat == nn::audio::SampleFormat_PcmInt16);
 
     // Prepare parameters for the buffer.
-    const int frameRate = 20;                             // 20 fps
+    const int frameRate = 50;                             // 20 fps
     const int frameSampleCount = sampleRate / frameRate;  // 50 milliseconds (in samples)
     const size_t dataSize = frameSampleCount * channelCount * nn::audio::GetSampleByteSize(sampleFormat);
     const size_t bufferSize = nn::util::align_up(dataSize, nn::audio::AudioOutBuffer::SizeGranularity);
