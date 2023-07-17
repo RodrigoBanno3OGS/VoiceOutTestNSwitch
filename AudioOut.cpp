@@ -371,6 +371,13 @@ void EncoderAndDecoderInitialization()
     }
 }
 
+void GetRawMicInput(void* audioOutBuffer) 
+{
+    while (!SwitchVoiceChatNativeCode::GetMicrophoneInputExternal(audioOutBuffer)) {
+        ;
+    }
+}
+
 void EncodeAndDecode(void* audioOutBuffer)
 {
     using namespace encodingAndDecoiding;
@@ -444,7 +451,7 @@ extern "C" void nnMain()
     nn::audio::AudioOutParameter parameter;
     nn::audio::InitializeAudioOutParameter(&parameter);
     parameter.sampleRate = 48000;
-    parameter.channelCount = 1;
+    parameter.channelCount = 2;
     // parameter.channelCount = 6;  // For 5.1ch output, specify 6 for the number of channels.
     if (nn::audio::OpenDefaultAudioOut(&audioOut, &systemEvent, parameter).IsFailure())
     {
@@ -483,7 +490,8 @@ extern "C" void nnMain()
     {
         outBuffer[i] = allocator.Allocate(bufferSize, nn::audio::AudioOutBuffer::AddressAlignment);
         NN_ASSERT(outBuffer[i]);
-        EncodeAndDecode(outBuffer[i]);
+        GetRawMicInput(outBuffer[i]);
+        //EncodeAndDecode(outBuffer[i]);
         //GenerateSquareWave(sampleFormat, outBuffer[i], channelCount, sampleRate, frameSampleCount, amplitude);
         nn::audio::SetAudioOutBufferInfo(&audioOutBuffer[i], outBuffer[i], bufferSize, dataSize);
         nn::audio::AppendAudioOutBuffer(&audioOut, &audioOutBuffer[i]);
@@ -588,7 +596,8 @@ extern "C" void nnMain()
             // Create square waveform data and register it again.
             void* pOutBuffer = nn::audio::GetAudioOutBufferDataPointer(pAudioOutBuffer);
             NN_ASSERT(nn::audio::GetAudioOutBufferDataSize(pAudioOutBuffer) == frameSampleCount * channelCount * nn::audio::GetSampleByteSize(sampleFormat));
-            EncodeAndDecode(pOutBuffer);
+            GetRawMicInput(pOutBuffer);
+            //EncodeAndDecode(pOutBuffer);
             //GenerateSquareWave(sampleFormat, pOutBuffer, channelCount, sampleRate, frameSampleCount, amplitude);
             nn::audio::AppendAudioOutBuffer(&audioOut, pAudioOutBuffer);
 

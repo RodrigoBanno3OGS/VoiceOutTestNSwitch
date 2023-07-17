@@ -168,6 +168,27 @@ namespace SwitchVoiceChatNativeCode {
 		}
 	}
 
+	bool GetMicrophoneInputExternal(void* outBuffer)
+	{
+		auto outBufferReinterpreted = static_cast<int16_t*>(outBuffer);
+		AudioInBuffer* releasedBuffer = GetReleasedAudioInBuffer(&audioIn);
+		if (releasedBuffer)
+		{
+			size_t releasedBufferSize = GetAudioInBufferDataSize(releasedBuffer) / 2;
+			int16_t* releasedBufferPointer = reinterpret_cast<int16_t*>(GetAudioInBufferDataPointer(releasedBuffer));
+
+			// only get one channel
+			size_t audioBufferMonoSize = releasedBufferSize / channelCount;
+			for (int i = 0; i < audioBufferMonoSize; i++)
+			{
+				outBufferReinterpreted[i] = releasedBufferPointer[i * channelCount];
+			}
+			AppendAudioInBuffer(&audioIn, &audioInBuffer);
+			return true;
+		}
+		else return false;
+	}
+
 	bool Encode(intptr_t* handler, unsigned char** bufferOut, int* count)
 	{
 		size_t partialEncodedOutSize = 0;
