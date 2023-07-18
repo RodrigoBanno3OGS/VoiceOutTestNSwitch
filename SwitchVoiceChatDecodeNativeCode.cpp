@@ -60,7 +60,7 @@ namespace SwitchVoiceChatDecodeNativeCode {
 		delete totalBufferDecoder;
 	}
 
-	extern "C" bool wntgd_DecompressVoiceData(intptr_t * handle, unsigned char* inputBuffer, int count, void* audioOutBuffer, int* outSampleCount, unsigned int* sampleRateOut)
+	extern "C" bool wntgd_DecompressVoiceData(intptr_t * handle, unsigned char* inputBuffer, int count, void* audioOutBuffer, size_t* outSampleCount, unsigned int* sampleRateOut)
 	{
 		auto audioOutBufferReinterpreted = reinterpret_cast<int16_t*>(audioOutBuffer);
 		size_t partialConsumed = 0;
@@ -72,8 +72,7 @@ namespace SwitchVoiceChatDecodeNativeCode {
 
 		while (count > 0)
 		{
-			OpusResult decoderResult = decoder->DecodeInterleaved(&partialConsumed, &partialOutSampleCount,
-				decoderOutBuffer, decoderOutBufferSize, inputBuffer, count);
+			OpusResult decoderResult = decoder->DecodeInterleaved(&partialConsumed, &partialOutSampleCount, decoderOutBuffer, decoderOutBufferSize, inputBuffer, count);
 
 			if (decoderResult == OpusResult_Success)
 			{
@@ -82,9 +81,20 @@ namespace SwitchVoiceChatDecodeNativeCode {
 				totalConsumed += partialConsumed;
 				totalOutSampleCount += partialOutSampleCount;
 				outVector->resize(totalOutSampleCount);
+				int startIndex = (totalOutSampleCount - partialOutSampleCount) * 2;
+				int j = 0;
 				for (int i = 0; i < partialOutSampleCount; i++)
 				{
-					audioOutBufferReinterpreted[totalOutSampleCount - partialOutSampleCount + i] = decoderOutBuffer[i];
+					if (startIndex + j <= 9600)
+						audioOutBufferReinterpreted[startIndex + j] = decoderOutBuffer[i];
+					else 
+						break;
+					j++;
+					if (startIndex + j <= 9600)
+						audioOutBufferReinterpreted[startIndex + j] = decoderOutBuffer[i];
+					else 
+						break;
+					j++;;
 				}
 			}
 			else

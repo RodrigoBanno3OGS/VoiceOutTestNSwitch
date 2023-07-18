@@ -198,7 +198,7 @@ namespace SwitchVoiceChatNativeCode {
 		}
 	}
 
-	bool Encode(intptr_t* handler, unsigned char** bufferOut, int* count)
+	bool Encode(intptr_t* handler, unsigned char** bufferOut, int* count, size_t& outSampleCount)
 	{
 		size_t partialEncodedOutSize = 0;
 		size_t totalEncodedOutSize = 0;
@@ -230,8 +230,8 @@ namespace SwitchVoiceChatNativeCode {
 
 		*handler = reinterpret_cast<intptr_t>(outVector);
 		*bufferOut = outVector->data();
-		*count = outVector->size();
-
+		*count += outVector->size();
+		outSampleCount += *count / 2;
 		if (*count > 0)
 		{
 			return true;
@@ -283,10 +283,10 @@ namespace SwitchVoiceChatNativeCode {
 		return true;
 	}
 
-	extern "C" bool wntgd_GetVoiceBuffer(intptr_t * handler, unsigned char** bufferOut, int* count)
+	extern "C" bool wntgd_GetVoiceBuffer(intptr_t * handler, unsigned char** bufferOut, int* count, size_t& outSampleCount)
 	{
 		GetMicrophoneInput();
-		return Encode(handler, bufferOut, count);
+		return Encode(handler, bufferOut, count, outSampleCount);
 	}
 
 	extern "C" bool wntgd_ReleaseVoiceBuffer(intptr_t * handler)

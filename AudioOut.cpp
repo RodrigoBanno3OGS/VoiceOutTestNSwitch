@@ -381,19 +381,26 @@ void GetRawMicInput(void* audioOutBuffer, size_t& pOutBufferSize)
     NN_LOG("SIZE AFTER: %d\n", pOutBufferSize);
 }
 
-void EncodeAndDecode(void* audioOutBuffer)
+void EncodeAndDecode(void* audioOutBuffer, size_t& audioOutBufferSize)
 {
+    size_t totalsampleCount = 0;
+    audioOutBufferSize = audioOutBufferSize / 2 / 2;
     using namespace encodingAndDecoiding;
     bool neverSucceded = true;
+    size_t outSampleCount = 0;
     while (neverSucceded)
     {
-        if (SwitchVoiceChatNativeCode::wntgd_GetVoiceBuffer(handler, bufferOut, count))
+        while (outSampleCount < audioOutBufferSize) 
         {
-            NN_LOG("Habemus ENCODED AUDIO! %i\n", *count);
-            if (SwitchVoiceChatDecodeNativeCode::wntgd_DecompressVoiceData(handler, bufferOut[0], *count, audioOutBuffer, outSampleCount, sampleRateOut)); 
+            SwitchVoiceChatNativeCode::wntgd_GetVoiceBuffer(handler, &bufferOut[outSampleCount*2], count, outSampleCount);
+        }
+        NN_LOG("ENCODED SAMPLE COUNT: %d\n", outSampleCount);
+        {
+            outSampleCount = 0;
+            if (SwitchVoiceChatDecodeNativeCode::wntgd_DecompressVoiceData(handler, bufferOut[0], *count, audioOutBuffer, &outSampleCount, sampleRateOut)); 
             {
                 neverSucceded = false;
-                NN_LOG("Habemus DECODED AUDIO!\nSample count out:%i", *outSampleCount);
+                NN_LOG("Habemus DECODED AUDIO!\nSample count out:%i\n", outSampleCount, outSampleCount);
                 NN_LOG("Sample rate out%i\n", *sampleRateOut);
             }
         }
@@ -494,8 +501,8 @@ extern "C" void nnMain()
         outBuffer[i] = allocator.Allocate(bufferSize, nn::audio::AudioOutBuffer::AddressAlignment);
         NN_ASSERT(outBuffer[i]);
         size_t outBufferSize = frameSampleCount * channelCount * nn::audio::GetSampleByteSize(sampleFormat);
-        GetRawMicInput(outBuffer[i], outBufferSize);
-        //EncodeAndDecode(outBuffer[i]);
+        //GetRawMicInput(outBuffer[i], outBufferSize);
+        EncodeAndDecode(outBuffer[i], outBufferSize);
         //GenerateSquareWave(sampleFormat, outBuffer[i], channelCount, sampleRate, frameSampleCount, amplitude);
         nn::audio::SetAudioOutBufferInfo(&audioOutBuffer[i], outBuffer[i], bufferSize, dataSize);
         nn::audio::AppendAudioOutBuffer(&audioOut, &audioOutBuffer[i]);
@@ -601,8 +608,8 @@ extern "C" void nnMain()
             void* pOutBuffer = nn::audio::GetAudioOutBufferDataPointer(pAudioOutBuffer);
             size_t pOutBufferSize = frameSampleCount * channelCount * nn::audio::GetSampleByteSize(sampleFormat);
             NN_ASSERT(nn::audio::GetAudioOutBufferDataSize(pAudioOutBuffer) == pOutBufferSize);
-            GetRawMicInput(pOutBuffer, pOutBufferSize);
-            //EncodeAndDecode(pOutBuffer);
+            //GetRawMicInput(pOutBuffer, pOutBufferSize);
+            EncodeAndDecode(pOutBuffer, pOutBufferSize);
             //GenerateSquareWave(sampleFormat, pOutBuffer, channelCount, sampleRate, frameSampleCount, amplitude);
             
             if (pOutBufferSize != 0) 
