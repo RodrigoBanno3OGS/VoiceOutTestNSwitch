@@ -155,7 +155,7 @@ namespace SwitchVoiceChatNativeCode {
 		AudioInBuffer* releasedBuffer = GetReleasedAudioInBuffer(&audioIn);
 		if (releasedBuffer)
 		{
-			size_t releasedBufferSize = GetAudioInBufferDataSize(releasedBuffer) / 2;
+			size_t releasedBufferSize = GetAudioInBufferDataSize(releasedBuffer);
 			int16_t* releasedBufferPointer = reinterpret_cast<int16_t*>(GetAudioInBufferDataPointer(releasedBuffer));
 
 			// only get one channel
