@@ -36,10 +36,10 @@ namespace SwitchVoiceChatDecodeNativeCode {
 		}
 
 		decoder = new OpusDecoder();
-		opusDecoderWorkBufferSize = decoder->GetWorkBufferSize(SAMPLE_RATE, 1); // channelCount = 1, because we use mono
+		opusDecoderWorkBufferSize = decoder->GetWorkBufferSize(SAMPLE_RATE, 2); // channelCount = 1, because we use mono
 		NNS_LOG("OPUS DECODER WORK BUFFER SIZE: %i\n", opusDecoderWorkBufferSize);
 		opusDecoderWorkBuffer = new unsigned char[opusDecoderWorkBufferSize];
-		OpusResult result = decoder->Initialize(SAMPLE_RATE, 1, opusDecoderWorkBuffer, opusDecoderWorkBufferSize);
+		OpusResult result = decoder->Initialize(SAMPLE_RATE, 2, opusDecoderWorkBuffer, opusDecoderWorkBufferSize);
 		NNS_LOG("OPUS RESULT: %i\n", result);
 		if (result != OpusResult_Success)
 		{

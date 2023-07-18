@@ -4,9 +4,9 @@ namespace SwitchVoiceChatNativeCode {
 	using namespace nn::audio;
 	using namespace nn::codec;
 	const int BUFFER_LENGTH_MILIS = 50;
-	const int ENCODER_BIT_RATE = 24000;
+	const int ENCODER_BIT_RATE = 60000;
 	const int MIN_TOTAL_BUFFER_SIZE = 32 * 16384;
-	const int ENCODER_FRAME_DURATION = 10000; // only 5000, 10000, and 20000 are valids values
+	const int ENCODER_FRAME_DURATION = 20000; // only 5000, 10000, and 20000 are valids values
 	const int MAX_OPUS_ENCODER_OUTPUT_SIZE = OpusPacketSizeMaximum;
 
 	AudioIn audioIn;
@@ -69,9 +69,9 @@ namespace SwitchVoiceChatNativeCode {
 	bool InitializeEncoder()
 	{
 		encoder = new OpusEncoder();
-		opusWorkBufferSize = encoder->GetWorkBufferSize(sampleRate, 1); // channelCount = 1, because we use mono
+		opusWorkBufferSize = encoder->GetWorkBufferSize(sampleRate, 2); // channelCount = 1, because we use mono
 		opusWorkBuffer = new unsigned char[opusWorkBufferSize];
-		OpusResult result = encoder->Initialize(sampleRate, 1, opusWorkBuffer, opusWorkBufferSize);
+		OpusResult result = encoder->Initialize(sampleRate, 2, opusWorkBuffer, opusWorkBufferSize);
 		if (result != OpusResult_Success) return false;
 
 		encoder->SetBitRate(ENCODER_BIT_RATE);
@@ -155,14 +155,14 @@ namespace SwitchVoiceChatNativeCode {
 		AudioInBuffer* releasedBuffer = GetReleasedAudioInBuffer(&audioIn);
 		if (releasedBuffer)
 		{
-			size_t releasedBufferSize = GetAudioInBufferDataSize(releasedBuffer) / 2;
+			size_t releasedBufferSize = GetAudioInBufferDataSize(releasedBuffer);
 			int16_t* releasedBufferPointer = reinterpret_cast<int16_t*>(GetAudioInBufferDataPointer(releasedBuffer));
 
 			// only get one channel
 			size_t audioBufferMonoSize = releasedBufferSize / channelCount;
-			for (int i = 0; i < audioBufferMonoSize; i++)
+			for (int i = 0; i < releasedBufferSize; i++)
 			{
-				PushRemainToEncodeBuffer(releasedBufferPointer[i * channelCount]);
+				PushRemainToEncodeBuffer(releasedBufferPointer[i]);
 			}
 			AppendAudioInBuffer(&audioIn, &audioInBuffer);
 		}
