@@ -168,13 +168,13 @@ namespace SwitchVoiceChatNativeCode {
 		}
 	}
 
-	bool GetMicrophoneInputExternal(void* outBuffer)
+	bool GetMicrophoneInputExternal(void* outBuffer, size_t& pOutBufferSize)
 	{
 		auto outBufferReinterpreted = static_cast<int16_t*>(outBuffer);
 		AudioInBuffer* releasedBuffer = GetReleasedAudioInBuffer(&audioIn);
 		if (releasedBuffer)
 		{
-			size_t releasedBufferSize = GetAudioInBufferDataSize(releasedBuffer) / 2;
+			size_t releasedBufferSize = GetAudioInBufferDataSize(releasedBuffer);
 			int16_t* releasedBufferPointer = reinterpret_cast<int16_t*>(GetAudioInBufferDataPointer(releasedBuffer));
 
 			// only get one channel
@@ -185,9 +185,14 @@ namespace SwitchVoiceChatNativeCode {
 				outBufferReinterpreted[i] = releasedBufferPointer[i];
 			}
 			AppendAudioInBuffer(&audioIn, &audioInBuffer);
+			pOutBufferSize = releasedBufferSize;
 			return true;
 		}
-		else return false;
+		else
+		{
+			pOutBufferSize = 0;
+			return false;
+		}
 	}
 
 	bool Encode(intptr_t* handler, unsigned char** bufferOut, int* count)
