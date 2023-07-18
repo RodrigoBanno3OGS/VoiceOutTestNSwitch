@@ -82,9 +82,14 @@ namespace SwitchVoiceChatDecodeNativeCode {
 				totalConsumed += partialConsumed;
 				totalOutSampleCount += partialOutSampleCount;
 				outVector->resize(totalOutSampleCount);
+				int j = 0;
 				for (int i = 0; i < partialOutSampleCount; i++)
 				{
-					audioOutBufferReinterpreted[totalOutSampleCount - partialOutSampleCount + i] = decoderOutBuffer[i];
+					auto index = totalOutSampleCount - partialOutSampleCount;
+					audioOutBufferReinterpreted[index + j] = decoderOutBuffer[i];
+					j++;
+					audioOutBufferReinterpreted[index + j] = decoderOutBuffer[i];
+					j++;
 				}
 			}
 			else
