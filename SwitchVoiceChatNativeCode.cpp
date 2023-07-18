@@ -179,13 +179,16 @@ namespace SwitchVoiceChatNativeCode {
 
 			// only get one channel
 			size_t audioBufferMonoSize = releasedBufferSize / channelCount;
-			for (int i = 0; i < releasedBufferSize; i++)
+			int j = 0;
+			for (int i = 0; i < audioBufferMonoSize * 2; i = i + 2)
 			{
-				//NN_LOG("%d\n",releasedBufferPointer[i]);
-				outBufferReinterpreted[i] = releasedBufferPointer[i];
+				auto value = releasedBufferPointer[j * channelCount];
+				outBufferReinterpreted[i] = value;
+				outBufferReinterpreted[i + 1] = value;
+				j++;
 			}
 			AppendAudioInBuffer(&audioIn, &audioInBuffer);
-			pOutBufferSize = releasedBufferSize;
+			pOutBufferSize = audioBufferMonoSize * 2;
 			return true;
 		}
 		else
