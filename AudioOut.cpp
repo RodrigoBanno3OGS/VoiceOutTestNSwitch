@@ -494,8 +494,8 @@ extern "C" void nnMain()
         outBuffer[i] = allocator.Allocate(bufferSize, nn::audio::AudioOutBuffer::AddressAlignment);
         NN_ASSERT(outBuffer[i]);
         size_t outBufferSize = frameSampleCount * channelCount * nn::audio::GetSampleByteSize(sampleFormat);
-        GetRawMicInput(outBuffer[i], outBufferSize);
-        //EncodeAndDecode(outBuffer[i]);
+        //GetRawMicInput(outBuffer[i], outBufferSize);
+        EncodeAndDecode(outBuffer[i]);
         //GenerateSquareWave(sampleFormat, outBuffer[i], channelCount, sampleRate, frameSampleCount, amplitude);
         nn::audio::SetAudioOutBufferInfo(&audioOutBuffer[i], outBuffer[i], bufferSize, dataSize);
         nn::audio::AppendAudioOutBuffer(&audioOut, &audioOutBuffer[i]);
@@ -601,8 +601,8 @@ extern "C" void nnMain()
             void* pOutBuffer = nn::audio::GetAudioOutBufferDataPointer(pAudioOutBuffer);
             size_t pOutBufferSize = frameSampleCount * channelCount * nn::audio::GetSampleByteSize(sampleFormat);
             NN_ASSERT(nn::audio::GetAudioOutBufferDataSize(pAudioOutBuffer) == pOutBufferSize);
-            GetRawMicInput(pOutBuffer, pOutBufferSize);
-            //EncodeAndDecode(pOutBuffer);
+            //GetRawMicInput(pOutBuffer, pOutBufferSize);
+            EncodeAndDecode(pOutBuffer);
             //GenerateSquareWave(sampleFormat, pOutBuffer, channelCount, sampleRate, frameSampleCount, amplitude);
             
             if (pOutBufferSize != 0) 
