@@ -69,12 +69,14 @@ namespace SwitchVoiceChatDecodeNativeCode {
 		size_t totalOutSampleCount = 0;
 		std::vector<float>* outVector = new std::vector<float>(0);
 		bool result = true;
-
+		int iteration = 0;
+		int aaaaaa = 0;
+		int sampleCount = 0;
 		while (count > 0)
 		{
 			OpusResult decoderResult = decoder->DecodeInterleaved(&partialConsumed, &partialOutSampleCount,
 				decoderOutBuffer, decoderOutBufferSize, inputBuffer, count);
-
+			NN_LOG("Iteration: %i, %d\n", iteration, partialOutSampleCount);
 			if (decoderResult == OpusResult_Success)
 			{
 				inputBuffer += partialConsumed;
@@ -82,14 +84,16 @@ namespace SwitchVoiceChatDecodeNativeCode {
 				totalConsumed += partialConsumed;
 				totalOutSampleCount += partialOutSampleCount;
 				outVector->resize(totalOutSampleCount);
-				int j = 0;
+				size_t index = totalOutSampleCount - partialOutSampleCount;
+				//NN_LOG("INDEX: %d\n", index);
 				for (int i = 0; i < partialOutSampleCount; i++)
 				{
-					auto index = totalOutSampleCount - partialOutSampleCount;
-					audioOutBufferReinterpreted[index + j] = decoderOutBuffer[i];
-					j++;
-					audioOutBufferReinterpreted[index + j] = decoderOutBuffer[i];
-					j++;
+					//NN_LOG("SAMPLE COUNTER: %d\n", sampleCount);
+					audioOutBufferReinterpreted[sampleCount] = decoderOutBuffer[i];
+					sampleCount++;
+					//NN_LOG("SAMPLE COUNTER: %d\n", sampleCount);
+					audioOutBufferReinterpreted[sampleCount] = decoderOutBuffer[i];
+					sampleCount++;
 				}
 			}
 			else
@@ -97,11 +101,12 @@ namespace SwitchVoiceChatDecodeNativeCode {
 				result = false;
 				break;
 			}
+			iteration++;
 		}
 
 		*handle = reinterpret_cast<intptr_t>(outVector);
 		//*audioOutBuffer = outVector->data();
-		*outSampleCount = totalOutSampleCount;
+		*outSampleCount = sampleCount;
 		*sampleRateOut = SAMPLE_RATE;
 		return result;
 	}

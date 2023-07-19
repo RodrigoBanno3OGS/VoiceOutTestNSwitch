@@ -160,10 +160,13 @@ namespace SwitchVoiceChatNativeCode {
 
 			// only get one channel
 			size_t audioBufferMonoSize = releasedBufferSize / channelCount;
+			int iteration;
 			for (int i = 0; i < audioBufferMonoSize; i++)
 			{
 				PushRemainToEncodeBuffer(releasedBufferPointer[i * channelCount]);
+				iteration++;
 			}
+			NN_LOG("Samples Captured by Mic: %d", iteration);
 			AppendAudioInBuffer(&audioIn, &audioInBuffer);
 		}
 	}
@@ -195,23 +198,25 @@ namespace SwitchVoiceChatNativeCode {
 		}
 	}
 
-	bool Encode(intptr_t* handler, unsigned char** bufferOut, int* count)
+	bool Encode(intptr_t* handler, unsigned char** bufferOut, int* count, size_t& outSampleCount)
 	{
 		size_t partialEncodedOutSize = 0;
 		size_t totalEncodedOutSize = 0;
 		auto outVector = new std::vector<unsigned char>(0);
 
 		int iteration = 0;
-		size_t inSize = SizeRemainToEncodeBuffer();
+		size_t remainToEncodeSize = SizeRemainToEncodeBuffer();
 
-		while (SizeRemainToEncodeBuffer() >= encodeSampleCountMaximum)
+		outSampleCount = 0;
+		while (remainToEncodeSize >= encodeSampleCountMaximum)
 		{
+			NN_LOG("Size Remain To Encode Buffer: %d\nIteration: %i\n", remainToEncodeSize, iteration);
 			CopyRemainToEncodeBuffer(tempInputEncoderBuffer, encodeSampleCountMaximum);
 			outVector->resize(totalEncodedOutSize + MAX_OPUS_ENCODER_OUTPUT_SIZE);
 			OpusResult result = encoder->EncodeInterleaved(
 				&partialEncodedOutSize, outVector->data() + totalEncodedOutSize, MAX_OPUS_ENCODER_OUTPUT_SIZE,
 				tempInputEncoderBuffer, encodeSampleCountMaximum);
-
+			NN_LOG("PartialEncodedOutSize: %d\n", partialEncodedOutSize);
 			if (result != OpusResult_Success)
 			{
 				NN_LOG("Opus Encoding Error: %s", result);
@@ -220,9 +225,14 @@ namespace SwitchVoiceChatNativeCode {
 
 			totalEncodedOutSize += partialEncodedOutSize;
 			PopRemainToEncodeBuffer(encodeSampleCountMaximum);
+			remainToEncodeSize = SizeRemainToEncodeBuffer();
 			iteration++;
+			outSampleCount += encodeSampleCountMaximum;
 		}
-
+		if (remainToEncodeSize < encodeSampleCountMaximum)
+		{
+			;
+		}
 		outVector->resize(totalEncodedOutSize);
 
 		*handler = reinterpret_cast<intptr_t>(outVector);
@@ -280,10 +290,10 @@ namespace SwitchVoiceChatNativeCode {
 		return true;
 	}
 
-	extern "C" bool wntgd_GetVoiceBuffer(intptr_t * handler, unsigned char** bufferOut, int* count)
+	extern "C" bool wntgd_GetVoiceBuffer(intptr_t * handler, unsigned char** bufferOut, int* count, size_t& outSampleCount)
 	{
 		GetMicrophoneInput();
-		return Encode(handler, bufferOut, count);
+		return Encode(handler, bufferOut, count, outSampleCount);
 	}
 
 	extern "C" bool wntgd_ReleaseVoiceBuffer(intptr_t * handler)

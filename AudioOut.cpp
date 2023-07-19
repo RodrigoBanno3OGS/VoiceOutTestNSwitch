@@ -387,9 +387,11 @@ void EncodeAndDecode(void* audioOutBuffer)
     bool neverSucceded = true;
     while (neverSucceded)
     {
-        if (SwitchVoiceChatNativeCode::wntgd_GetVoiceBuffer(handler, bufferOut, count))
+        size_t encodedOutSampleCount = 0;
+        if (SwitchVoiceChatNativeCode::wntgd_GetVoiceBuffer(handler, bufferOut, count, encodedOutSampleCount))
         {
-            NN_LOG("Habemus ENCODED AUDIO! %i\n", *count);
+            NN_LOG("Habemus ENCODED AUDIO! %i\n", encodedOutSampleCount);
+            NN_LOG("Habemus ENCODED AUDIO????! %i\n", *count);
             if (SwitchVoiceChatDecodeNativeCode::wntgd_DecompressVoiceData(handler, bufferOut[0], *count, audioOutBuffer, outSampleCount, sampleRateOut)); 
             {
                 neverSucceded = false;
