@@ -13,6 +13,6 @@
 namespace SwitchVoiceChatDecodeNativeCode {
 	extern "C" bool wntgd_InitializeDecoder();
 	extern "C" void wntgd_FinalizeDecoder();
-	extern "C" bool wntgd_DecompressVoiceData(intptr_t * handle, unsigned char* inputBuffer, int count, float** audioOut, int* outSampleCount, unsigned int* sampleRateOut);
+	extern "C" bool wntgd_DecompressVoiceData(intptr_t * handle, unsigned char* inputBuffer, int count, void* audioOut, int* outSampleCount, unsigned int* sampleRateOut);
 	extern "C" bool wntgd_ReleaseDecompressBuffer(intptr_t * handler);
 }

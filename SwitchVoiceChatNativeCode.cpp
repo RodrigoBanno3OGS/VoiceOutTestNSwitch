@@ -130,22 +130,22 @@ namespace SwitchVoiceChatNativeCode {
 		if (remainToEncodeBufferStart <= remainToEncodeBufferEnd)
 		{
 			int16_t* source = &remainToEncodeBuffer[remainToEncodeBufferStart];
-			memcpy(dest, source, count);
+			memcpy(dest, source, count * 2);
 		}
 		else
 		{
 			if (remainToEncodeBufferStart + count <= remainToEncodeBufferSize)
 			{
 				int16_t* source = &remainToEncodeBuffer[remainToEncodeBufferStart];
-				memcpy(dest, source, count);
+				memcpy(dest, source, count * 2);
 			}
 			else
 			{
 				int16_t* source = &remainToEncodeBuffer[remainToEncodeBufferStart];
 				size_t sourceCount = remainToEncodeBufferSize - remainToEncodeBufferStart;
-				memcpy(dest, source, sourceCount);
+				memcpy(dest, source, sourceCount * 2);
 				sourceCount = count - sourceCount;
-				memcpy(dest, remainToEncodeBuffer, sourceCount);
+				memcpy(dest, remainToEncodeBuffer, sourceCount * 2);
 			}
 		}
 	}
@@ -160,31 +160,63 @@ namespace SwitchVoiceChatNativeCode {
 
 			// only get one channel
 			size_t audioBufferMonoSize = releasedBufferSize / channelCount;
+			int iteration;
 			for (int i = 0; i < audioBufferMonoSize; i++)
 			{
 				PushRemainToEncodeBuffer(releasedBufferPointer[i * channelCount]);
+				iteration++;
 			}
+			NN_LOG("Samples Captured by Mic: %d", iteration);
 			AppendAudioInBuffer(&audioIn, &audioInBuffer);
 		}
 	}
 
-	bool Encode(intptr_t* handler, unsigned char** bufferOut, int* count)
+	bool GetMicrophoneInputExternal(void* outBuffer, size_t& pOutBufferSize)
+	{
+		auto outBufferReinterpreted = static_cast<int16_t*>(outBuffer);
+		AudioInBuffer* releasedBuffer = GetReleasedAudioInBuffer(&audioIn);
+		if (releasedBuffer)
+		{
+			size_t releasedBufferSize = GetAudioInBufferDataSize(releasedBuffer);
+			int16_t* releasedBufferPointer = reinterpret_cast<int16_t*>(GetAudioInBufferDataPointer(releasedBuffer));
+
+			// only get one channel
+			size_t audioBufferMonoSize = releasedBufferSize / channelCount;
+			for (int i = 0; i < releasedBufferSize; i++)
+			{
+				//NN_LOG("%d\n",releasedBufferPointer[i]);
+				outBufferReinterpreted[i] = releasedBufferPointer[i];
+			}
+			AppendAudioInBuffer(&audioIn, &audioInBuffer);
+			pOutBufferSize = releasedBufferSize;
+			return true;
+		}
+		else
+		{
+			pOutBufferSize = 0;
+			return false;
+		}
+	}
+
+	bool Encode(intptr_t* handler, unsigned char** bufferOut, int* count, size_t& outSampleCount)
 	{
 		size_t partialEncodedOutSize = 0;
 		size_t totalEncodedOutSize = 0;
 		auto outVector = new std::vector<unsigned char>(0);
 
 		int iteration = 0;
-		size_t inSize = SizeRemainToEncodeBuffer();
+		size_t remainToEncodeSize = SizeRemainToEncodeBuffer();
 
-		while (SizeRemainToEncodeBuffer() >= encodeSampleCountMaximum)
+		outSampleCount = 0;
+		while (remainToEncodeSize >= encodeSampleCountMaximum)
 		{
+			NN_LOG("Size Remain To Encode Buffer: %d\nIteration: %i\n", remainToEncodeSize, iteration);
 			CopyRemainToEncodeBuffer(tempInputEncoderBuffer, encodeSampleCountMaximum);
 			outVector->resize(totalEncodedOutSize + MAX_OPUS_ENCODER_OUTPUT_SIZE);
 			OpusResult result = encoder->EncodeInterleaved(
 				&partialEncodedOutSize, outVector->data() + totalEncodedOutSize, MAX_OPUS_ENCODER_OUTPUT_SIZE,
 				tempInputEncoderBuffer, encodeSampleCountMaximum);
-
+			NN_LOG("PartialEncodedOutSize: %d\n", partialEncodedOutSize);
 			if (result != OpusResult_Success)
 			{
 				NN_LOG("Opus Encoding Error: %s", result);
@@ -193,9 +225,14 @@ namespace SwitchVoiceChatNativeCode {
 
 			totalEncodedOutSize += partialEncodedOutSize;
 			PopRemainToEncodeBuffer(encodeSampleCountMaximum);
+			remainToEncodeSize = SizeRemainToEncodeBuffer();
 			iteration++;
+			outSampleCount += encodeSampleCountMaximum;
 		}
-
+		if (remainToEncodeSize < encodeSampleCountMaximum)
+		{
+			;
+		}
 		outVector->resize(totalEncodedOutSize);
 
 		*handler = reinterpret_cast<intptr_t>(outVector);
@@ -253,10 +290,10 @@ namespace SwitchVoiceChatNativeCode {
 		return true;
 	}
 
-	extern "C" bool wntgd_GetVoiceBuffer(intptr_t * handler, unsigned char** bufferOut, int* count)
+	extern "C" bool wntgd_GetVoiceBuffer(intptr_t * handler, unsigned char** bufferOut, int* count, size_t& outSampleCount)
 	{
 		GetMicrophoneInput();
-		return Encode(handler, bufferOut, count);
+		return Encode(handler, bufferOut, count, outSampleCount);
 	}
 
 	extern "C" bool wntgd_ReleaseVoiceBuffer(intptr_t * handler)

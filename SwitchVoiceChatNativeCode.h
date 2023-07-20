@@ -20,9 +20,10 @@ namespace SwitchVoiceChatNativeCode {
 	void PopRemainToEncodeBuffer(size_t quantity);
 	void CopyRemainToEncodeBuffer(int16_t* dest, size_t count);
 	void GetMicrophoneInput();
-	bool Encode(intptr_t* handler, unsigned char** bufferOut, int* count);
+	bool GetMicrophoneInputExternal(void* outBuffer, size_t& pOutBufferSize);
+	bool Encode(intptr_t* handler, unsigned char** bufferOut, int* count, size_t& outSampleCount);
 	extern "C" void wntgd_StopRecordVoice();
 	extern "C" bool wntgd_StartRecordVoice();
-	extern "C" bool wntgd_GetVoiceBuffer(intptr_t * handler, unsigned char** bufferOut, int* count);
+	extern "C" bool wntgd_GetVoiceBuffer(intptr_t * handler, unsigned char** bufferOut, int* count, size_t& outSampleCount);
 	extern "C" bool wntgd_ReleaseVoiceBuffer(intptr_t * handler);
 }
