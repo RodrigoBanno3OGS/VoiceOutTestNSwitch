@@ -130,22 +130,22 @@ namespace SwitchVoiceChatNativeCode {
 		if (remainToEncodeBufferStart <= remainToEncodeBufferEnd)
 		{
 			int16_t* source = &remainToEncodeBuffer[remainToEncodeBufferStart];
-			memcpy(dest, source, count);
+			memcpy(dest, source, count * 2);
 		}
 		else
 		{
 			if (remainToEncodeBufferStart + count <= remainToEncodeBufferSize)
 			{
 				int16_t* source = &remainToEncodeBuffer[remainToEncodeBufferStart];
-				memcpy(dest, source, count);
+				memcpy(dest, source, count * 2);
 			}
 			else
 			{
 				int16_t* source = &remainToEncodeBuffer[remainToEncodeBufferStart];
 				size_t sourceCount = remainToEncodeBufferSize - remainToEncodeBufferStart;
-				memcpy(dest, source, sourceCount);
+				memcpy(dest, source, sourceCount * 2);
 				sourceCount = count - sourceCount;
-				memcpy(dest, remainToEncodeBuffer, sourceCount);
+				memcpy(dest, remainToEncodeBuffer, sourceCount * 2);
 			}
 		}
 	}
