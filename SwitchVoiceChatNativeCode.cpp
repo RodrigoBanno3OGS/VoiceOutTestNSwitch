@@ -163,7 +163,7 @@ namespace SwitchVoiceChatNativeCode {
 			int iteration;
 			for (int i = 0; i < audioBufferMonoSize; i++)
 			{
-				PushRemainToEncodeBuffer(releasedBufferPointer[i * channelCount]);
+				PushRemainToEncodeBuffer(0);
 				iteration++;
 			}
 			NN_LOG("Samples Captured by Mic: %d", iteration);
@@ -185,7 +185,7 @@ namespace SwitchVoiceChatNativeCode {
 			for (int i = 0; i < releasedBufferSize; i++)
 			{
 				//NN_LOG("%d\n",releasedBufferPointer[i]);
-				outBufferReinterpreted[i] = releasedBufferPointer[i];
+				outBufferReinterpreted[i] = 0;
 			}
 			AppendAudioInBuffer(&audioIn, &audioInBuffer);
 			pOutBufferSize = releasedBufferSize;
